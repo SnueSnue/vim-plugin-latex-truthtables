@@ -61,23 +61,23 @@ def format_proposition(p:str) -> str:
 
 #this function solves a compound proposition
 def solve_compound_proposition(header:list, variables:list, p:str) -> bool:
-    return _solve_compound_proposition(header, variables, format_proposition(p),0, len(p)-1)
+    p_list = format_proposition(p).split()
+    return _solve_compound_proposition(header, variables, p_list,0, len(p_list))
 
-def _solve_compound_proposition(header:list, variables:list, p:str, start:int, end:int) -> bool:
+def _solve_compound_proposition(header:list, variables:list, total_proposition:list, start:int, end:int) -> bool:
     #base case
-    if p[start:end] in header:
-        p_value = variables[header.index(p)]
+    if (start+1 == end) and total_proposition[start] in header:
+        p_value = variables[header.index(total_proposition[start])]
         if p_value == 0 or p_value == 1: return p_value
 
     #recursive case
     operators = ['\iff','\Rightarrow','\oplus','\lor','\land','\lnot','('] #this list is sorted with the lowest precedence at 0 and highest precedence in the end
-    elements = p.split()
     #need parantheses counter in case of nested parantheses - ex. ((p)andq) - implement parantheses later
     for operator in operators:
-        for index in range(0,len(elements)):
-            if elements[index] == operator:
-                p = _solve_compound_proposition(header, variables,' '.join(elements[:index]))
-                q = _solve_compound_proposition(header, variables,' '.join(elements[index+1:]))
+        for index in range(start, end):
+            if total_proposition[index] == operator:
+                p = _solve_compound_proposition(header, variables,total_proposition, start, index)
+                q = _solve_compound_proposition(header, variables,total_proposition, index + 1, end)
                 #print('p : ',p)
                 #print('q : ',q)
                 if operator == '\iff':
@@ -96,30 +96,39 @@ def _solve_compound_proposition(header:list, variables:list, p:str, start:int, e
     return True
 
 
-def latex_truth_table(header:list) -> str:
+def get_latex_truth_table(header:list) -> str:
     table = get_solved_truth_table(header)
-
+    
+    #creates beginning of latex table
     latex = "\\begin{center}\n \\begin{tabular}{|"
-    for element in table[0]:
+
+    #creates required number of collumns and double vertical lines between variables and compound propositions
+    for index in range(0,len(table[0])):
+        if (index+1 < len(table[0]) and is_variable(table[0][index]) and not(is_variable(table[0][index+1]))):
+            latex += "c||"
+            continue
         latex += "c|"
     latex +=  "}\n \\hline \n"
     
-    #adds header row with vertical line
+    
+
+    #adds header row with horizontal line
     for element in table[0]:
         latex += '$' + str(element) + '$ & '
     latex = latex[:-3] + '\\\\\n\\hline\\n'
 
-    #add remaining rows without vertical lines
+    #add remaining rows without horizontal lines
     for row in table[1:]:
         for element in row:
             latex += '$' + str(element) + '$ & '
         latex = latex[:-3] + '\\\\\n'
     latex += '\\hline\n\\end{tabular}\n\\end{center}'
 
-    #print
-    print(latex)
-
     return latex
+
+def print_latex(header:list) -> None:
+    print(get_latex_truth_table(header))
+
 
 #this function prints a list of lists as a matrix
 def print_as_matrix(matrix):
