@@ -1,5 +1,7 @@
 #this program autogenerates truthtables formatted for latex
 
+
+
 #import vim module
 try:
   import vim
@@ -25,12 +27,11 @@ def write_truth_table():
 
 def format_header(raw:str) -> list:
     header = raw.split(',')
-    for element in header:
-        if element[0] == ' ':
-            element = element[1:]
+    for index,element in enumerate(header):
+        if element[0].isspace():
+            header[index] = element[1:]
     return header
 
-#this functions checks if a string is a variable
 def is_variable(statement:str) -> bool:
     for element in statement.split():
         if '\\' in element:
