@@ -13,7 +13,7 @@ def write_truth_table():
     current_line = vim.current.buffer[row-1]
     
     #format current line as list of propositions
-    header = current_line.split(',')
+    header = format_header(current_line)
 
     #get truthtable from header
     truth_table = get_latex_truth_table(header)
@@ -22,6 +22,13 @@ def write_truth_table():
     vim.current.buffer[row-1]=truth_table[0]
     for index, truth_row in enumerate(truth_table[1:]):
         vim.current.buffer.append(truth_row,row+index)
+
+def format_header(raw:str) -> list:
+    header = raw.split(',')
+    for element in header:
+        if element[0] == ' ':
+            element = element[1:]
+    return header
 
 #this functions checks if a string is a variable
 def is_variable(statement:str) -> bool:
@@ -166,36 +173,3 @@ def get_latex_truth_table(header:list) -> list:
     latex += ['\\hline','\\end{tabular}','\\end{center}']
 
     return latex
-
-def print_latex(header:list) -> None:
-    print(get_latex_truth_table(header))
-
-
-#this function prints a list of lists as a matrix
-def print_matrix(header: list):
-    for row in get_solved_truth_table(header):
-        print(row)
-
-def print_as_matrix(table:list):
-    for row in table:
-        print(row)
-
-def test_loop():
-    while 1:
-        print(solve_compound_proposition(input('header : '),input('variables : '),input('proposition : ')))
-
-def print_truthtable(*args):
-    print_as_matrix(get_solved_truth_table(args))
-
-#proposition = 'p \lor q \Rightarrow p \land q'
-#header = ['p','q','p \land q','p \lor q' ,proposition]
-#variables = [0,1,'?','?','?']
-
-#print('header : ',header,'\nvariables : ',variables,'\n proposition : ',proposition,'\n',solve_compound_proposition(header,variables,proposition))
-
-#print_as_matrix(get_solved_truth_table('p','q','\lnot p','p \land q','p \lor q','p \land q \Rightarrow p \lor q'))
-
-
-#print_as_matrix(get_latex_truth_table(['p','q','p \land q']))
-
-#test_loop()
