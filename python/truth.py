@@ -1,5 +1,28 @@
 #this program autogenerates truthtables formatted for latex
 
+#import vim module
+try:
+  import vim
+except:
+  print("No vim module available outside vim")
+  pass
+
+#this function is the only one called by vim
+def write_truth_table():
+    row, col = vim.current.window.cursor
+    current_line = vim.current.buffer[row-1]
+    
+    #format current line as list of propositions
+    header = current_line.split(',')
+
+    #get truthtable from header
+    truth_table = get_latex_truth_table(header)
+
+    #writes truth table under current line in vim
+    vim.current.buffer[row-1]=truth_table[0]
+    for index, truth_row in enumerate(truth_table[1:]):
+        vim.current.buffer.append(truth_row,row+index)
+
 #this functions checks if a string is a variable
 def is_variable(statement:str) -> bool:
     for element in statement.split():
@@ -71,11 +94,24 @@ def _solve_compound_proposition(header:list, variables:list, total_proposition:l
         if p_value == 0 or p_value == 1: return p_value
 
     #recursive case
-    operators = ['\iff','\Rightarrow','\oplus','\lor','\land','\lnot','('] #this list is sorted with the lowest precedence at 0 and highest precedence in the end
+    #removes outside parantheses if any
+    if total_proposition[start] == '(' and total_proposition[end-1] == ')':
+        return _solve_compound_proposition(header, variables, total_proposition, start+1, end-1)
+
+    operators = ['\iff','\Rightarrow','\oplus','\lor','\land','\lnot'] #this list is sorted with the lowest precedence at 0 and highest precedence in the end
     #need parantheses counter in case of nested parantheses - ex. ((p)andq) - implement parantheses later
     for operator in operators:
+        paranthese_counter = 0
         for index in range(start, end):
-            if total_proposition[index] == operator:
+            #check if outside paranthese
+            if total_proposition[index] == '(':
+                paranthese_counter += 1
+                continue
+            if total_proposition[index] == ')':
+                paranthese_counter -= 1
+                continue
+
+            if paranthese_counter == 0 and total_proposition[index] == operator:
                 p = _solve_compound_proposition(header, variables,total_proposition, start, index)
                 q = _solve_compound_proposition(header, variables,total_proposition, index + 1, end)
                 #print('p : ',p)
@@ -93,36 +129,41 @@ def _solve_compound_proposition(header:list, variables:list, total_proposition:l
                     return p and q
                 if operator == '\lnot':
                     return not(q)
+                
     return True
 
 
-def get_latex_truth_table(header:list) -> str:
+def get_latex_truth_table(header:list) -> list:
     table = get_solved_truth_table(header)
     
     #creates beginning of latex table
-    latex = "\\begin{center}\n \\begin{tabular}{|"
+    latex = ['\\begin{center}', '\\begin{tabular}{|']
 
     #creates required number of collumns and double vertical lines between variables and compound propositions
     for index in range(0,len(table[0])):
         if (index+1 < len(table[0]) and is_variable(table[0][index]) and not(is_variable(table[0][index+1]))):
-            latex += "c||"
+            latex[1] += "c||"
             continue
-        latex += "c|"
-    latex +=  "}\n \\hline \n"
+        latex[1] += "c|"
+    latex[1] += '}'
+    latex += ['\\hline']
     
     
 
     #adds header row with horizontal line
+    latex.append('')
     for element in table[0]:
-        latex += '$' + str(element) + '$ & '
-    latex = latex[:-3] + '\\\\\n\\hline\\n'
+        latex[3] += '$' + str(element) + '$ & '
+    latex[3] = latex[3][:-3] + '\\\\'
+    latex += ['\\hline']
 
     #add remaining rows without horizontal lines
-    for row in table[1:]:
+    for index, row in enumerate(table[1:]):
+        latex.append('')
         for element in row:
-            latex += '$' + str(element) + '$ & '
-        latex = latex[:-3] + '\\\\\n'
-    latex += '\\hline\n\\end{tabular}\n\\end{center}'
+            latex[index+5] += '$' + str(element) + '$ & '
+        latex[index+5] = latex[index+5][:-3] + '\\\\'
+    latex += ['\\hline','\\end{tabular}','\\end{center}']
 
     return latex
 
@@ -131,10 +172,13 @@ def print_latex(header:list) -> None:
 
 
 #this function prints a list of lists as a matrix
-def print_as_matrix(matrix):
-    for row in matrix:
+def print_matrix(header: list):
+    for row in get_solved_truth_table(header):
         print(row)
 
+def print_as_matrix(table:list):
+    for row in table:
+        print(row)
 
 def test_loop():
     while 1:
@@ -151,5 +195,7 @@ def print_truthtable(*args):
 
 #print_as_matrix(get_solved_truth_table('p','q','\lnot p','p \land q','p \lor q','p \land q \Rightarrow p \lor q'))
 
+
+#print_as_matrix(get_latex_truth_table(['p','q','p \land q']))
 
 #test_loop()
